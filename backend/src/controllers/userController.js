@@ -87,3 +87,39 @@ exports.updateUser = (req, res) => {
     })
     .catch(err => res.status(500).json({ error: err.message }));
 };
+
+exports.completeActivity = async (req, res) => {
+  try {
+    const result = await userService.completeActivity(
+      req.params.id,
+      req.body.activityId
+    );
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.updateCustomization = async (req, res) => {
+  try {
+    const user = await userService.customizeProfile(req.params.id, req.body);
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.getUserBadges = async (req, res) => {
+  try {
+    const badges = await userService.getBadges(req.params.id);
+    res.json(badges);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.getCurrentUser = (req, res) => {
+  userService.getUserById(req.user.id)
+    .then(user => res.json({ data: user }))
+    .catch(err => res.status(500).json({ error: err.message }));
+};

@@ -18,6 +18,24 @@ const BadgeModel = {
     db.all(sql, [], (err, rows) => {
       callback(err, rows);
     });
+  },
+
+  findByType: (type, callback) => {
+    db.all(
+      'SELECT * FROM badges WHERE type = ?',
+      [type],
+      callback
+    );
+  },
+
+  findAchievable: (callback) => {
+    db.all(
+      `SELECT * FROM badges 
+       WHERE (repeatable = TRUE OR id NOT IN (
+         SELECT badge_id FROM user_badges WHERE unlocked = TRUE
+       ))`,
+      callback
+    );
   }
 };
 

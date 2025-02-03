@@ -57,6 +57,40 @@ const userService = {
         resolve(updatedUser);
       });
     });
+  },
+  completeActivity: async (userId, activityId) => {
+    return new Promise((resolve, reject) => {
+      db.get(
+        `SELECT points FROM activities WHERE id = ?`,
+        [activityId],
+        async (err, activity) => {
+          if (err) return reject(err);
+          
+          // Atualiza pontos e nível
+          UserModel.updatePointsAndLevel(userId, activity.points, async (err, result) => {
+            if (err) return reject(err);
+            
+            // Verifica conquistas
+            const badges = await BadgeService.checkNewBadges(userId);
+            
+            resolve({
+              points: result.currentPoints,
+              level: result.newLevel,
+              badges
+            });
+          });
+        }
+      );
+    });
+  },
+
+  customizeProfile: (userId, customization) => {
+    return new Promise((resolve, reject) => {
+      UserModel.updateCustomization(userId, customization, (err, user) => {
+        if (err) reject(err);
+        resolve(user);
+      });
+    });
   }
 };
 

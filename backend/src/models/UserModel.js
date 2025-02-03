@@ -46,6 +46,82 @@ const UserModel = {
         }
       );
     });
+  },
+
+  updatePointsAndLevel: (userId, pointsEarned, callback) => {
+    db.serialize(() => {
+      // Atualiza os pontos primeiro
+      db.run(
+        `UPDATE users 
+         SET points = points + ?
+         WHERE id = ?`,
+        [pointsEarned, userId],
+        function(err) {
+          if (err) return callback(err);
+
+          // Verifica e atualiza o nível
+          db.get(
+            `SELECT points, level FROM users WHERE id = ?`,
+            [userId],
+            (err, row) => {
+              if (err) return callback(err);
+              
+              let newLevel = row.level;
+              let currentPoints = row.points;
+
+              // Calcula o novo nível (progressão exponencial)
+              while (currentPoints >= newLevel * 100) {
+                newLevel += 1;
+              }
+
+              if (newLevel > row.level) {
+                db.run(
+                  `UPDATE users SET level = ? WHERE id = ?`,
+                  [newLevel, userId],
+                  (err) => callback(err, { newLevel, currentPoints })
+                );
+              } else {
+                callback(null, { newLevel: row.level, currentPoints });
+              }
+            }
+          );
+        }
+      );
+    });
+  },
+
+  unlockBadge: (userId, badgeId, callback) => {
+    db.run(
+      `INSERT INTO user_badges (user_id, badge_id) 
+       VALUES (?, ?)`,
+      [userId, badgeId],
+      function(err) {
+        callback(err, { badgeId, id: this.lastID });
+      }
+    );
+  },
+
+  updateCustomization: (userId, { theme, colorScheme, avatar }, callback) => {
+    db.run(
+      `UPDATE users 
+       SET theme = ?, color_scheme = ?, avatar = ?
+       WHERE id = ?`,
+      [theme, colorScheme, avatar, userId],
+      function(err) {
+        if (err) return callback(err);
+        UserModel.findById(userId, callback);
+      }
+    );
+  },
+
+  getBadges: (userId, callback) => {
+    db.all(
+      `SELECT b.* FROM badges b
+       JOIN user_badges ub ON b.id = ub.badge_id
+       WHERE ub.user_id = ?`,
+      [userId],
+      callback
+    );
   }
 };
 

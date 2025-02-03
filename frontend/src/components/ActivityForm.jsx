@@ -1,8 +1,9 @@
 // frontend/src/components/ActivityForm.jsx
 import React, { useState } from 'react';
 import axios from 'axios';
+import { FormContainer } from '../theme';
 
-const ActivityForm = () => {
+const ActivityForm = ({ onSuccess }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [points, setPoints] = useState(0);
@@ -13,19 +14,23 @@ const ActivityForm = () => {
       title,
       description,
       points: parseInt(points, 10),
-      user_id: 1 // Exemplo: usuário fixo com ID 1
+      user_id: localStorage.getItem('userId') // Use o ID do usuário logado
+    }, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`
+      }
     })
     .then(() => {
       setTitle('');
       setDescription('');
       setPoints(0);
-      window.location.reload();
+      onSuccess(); // Chame a função de atualização
     })
     .catch(err => console.error("Erro ao criar atividade:", err));
   };
 
   return (
-    <div>
+    <FormContainer>
       <h3>Criar Nova Atividade</h3>
       <form onSubmit={handleSubmit}>
         <div>
@@ -56,7 +61,7 @@ const ActivityForm = () => {
         </div>
         <button type="submit">Criar</button>
       </form>
-    </div>
+    </FormContainer>
   );
 };
 

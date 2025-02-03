@@ -1,8 +1,7 @@
-// frontend/src/components/Login.jsx
 import React, { useState } from 'react';
 import axios from 'axios';
 
-function Login() {
+function Login({ setUser }) { // Recebe setUser via props
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -14,19 +13,15 @@ function Login() {
     axios.post('http://localhost:5000/api/users/login', { email, password })
       .then((response) => {
         const { user, token } = response.data.data;
-        // Salva o token no localStorage
         localStorage.setItem('token', token);
         localStorage.setItem('userId', user.id);
+        setUser(user); // Agora está definido
         setSuccessMsg('Login realizado com sucesso!');
         setError('');
       })
       .catch((err) => {
         setSuccessMsg('');
-        if (err.response && err.response.data && err.response.data.error) {
-          setError(err.response.data.error);
-        } else {
-          setError('Erro ao fazer login.');
-        }
+        setError(err.response?.data?.error || 'Erro ao fazer login');
       });
   };
 

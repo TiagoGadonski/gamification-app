@@ -1,110 +1,68 @@
-// frontend/src/App.js
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes,  Navigate } from 'react-router-dom';
+import { ThemeProvider } from 'styled-components';
+import { cyberpunkTheme } from './theme';
+import { useEffect, useState } from 'react';
+import axios from 'axios';
 
-// Importamos nossos componentes
+
 import Dashboard from './components/Dashboard';
-import Profile from './components/Profile';
 import ActivityList from './components/ActivityList';
-import ActivityForm from './components/ActivityForm';
-import FinanceList from './components/FinanceList';
-import FinanceForm from './components/FinanceForm';
-import NoteList from './components/NoteList';
-import NoteForm from './components/NoteForm';
+import AvatarCustomizer from './components/AvatarCustomizer';
 import Login from './components/Login';
+import GlobalStyle from './GlobalStyle';
 import Register from './components/Register';
+import Profile from './components/Profile';
 import EditUser from './components/EditUser';
-import PrivateRoute from './PrivateRoute';
+import Navbar from './components/Navbar';
 
-function App() {
+
+
+const App = () => {
+
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          const response = await axios.get('http://localhost:5000/api/users/me', {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          setUser(response.data.data);
+        } catch (err) {
+          localStorage.removeItem('token');
+        }
+      }
+    };
+    checkAuth();
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('userId');
+    setUser(null);
+  };
+
   return (
-    <Router>
-      <div>
-        {/* Menu de navegação */}
-        <nav style={{ marginBottom: '20px' }}>
-          <ul style={{ display: 'flex', gap: '20px', listStyle: 'none' }}>
-            <li><Link to="/">Dashboard</Link></li>
-            <li><Link to="/profile">Perfil</Link></li>
-            <li><Link to="/activities">Atividades</Link></li>
-            <li><Link to="/finances">Finanças</Link></li>
-            <li><Link to="/notes">Notas</Link></li>
-            <li><Link to="/edit-user">Editar Perfil</Link></li>
-            <li><Link to="/login">Login</Link></li>
-            <li><Link to="/register">Registrar</Link></li>
-          </ul>
-        </nav>
-
-        <Routes>
-          {/* Rota de Login (público) */}
-          <Route path="/login" element={<Login />} />
-          {/* Rota de Registro (público) */}
-          <Route path="/register" element={<Register />} />
-
-          {/* As demais rotas ficam protegidas pelo PrivateRoute */}
-          <Route
-            path="/"
-            element={
-              <PrivateRoute>
-                <Dashboard />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/profile"
-            element={
-              <PrivateRoute>
-                <Profile />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/activities"
-            element={
-              <PrivateRoute>
-                <div>
-                  <ActivityForm />
-                  <ActivityList />
-                </div>
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/finances"
-            element={
-              <PrivateRoute>
-                <div>
-                  <FinanceForm />
-                  <FinanceList />
-                </div>
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/notes"
-            element={
-              <PrivateRoute>
-                <div>
-                  <NoteForm />
-                  <NoteList />
-                </div>
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/edit-user"
-            element={
-              <PrivateRoute>
-                <EditUser />
-              </PrivateRoute>
-            }
-          />
-
-          {/* Caso queira redirecionar para /login caso a rota não exista */}
-          <Route path="*" element={<Login />} />
-        </Routes>
-      </div>
-    </Router>
+    <ThemeProvider theme={cyberpunkTheme}>
+      <GlobalStyle />
+      <Router>
+      <Navbar user={user} onLogout={handleLogout} />
+      <Routes>
+      <Route path="/" element={user ? <Dashboard /> : <Navigate to="/login" />} />
+      <Route path="/login" element={user ? <Navigate to="/" /> : <Login setUser={setUser} />} />
+        <Route path="/register" element={user ? <Navigate to="/" /> : <Register />} />
+        <Route path="/activities" element={user ? <ActivityList /> : <Navigate to="/login" />} />
+        <Route path="/profile" element={user ? <Profile /> : <Navigate to="/login" />} />
+        <Route path="/edit-profile" element={user ? <EditUser user={user} /> : <Navigate to="/login" />} />
+        <Route path="/customize" element={user ? <AvatarCustomizer /> : <Navigate to="/login" />} />
+        <Route path="*" element={<Navigate to="/" />} />
+      </Routes>
+      </Router>
+    </ThemeProvider>
   );
-}
+};
 
 export default App;
